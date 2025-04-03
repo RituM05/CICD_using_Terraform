@@ -31,3 +31,7 @@ variable "github_branch" {
   type        = string
   default     = "main"
 }
+
+variable "terraform_state_bucket" {
+  type = string
+}
