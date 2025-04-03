@@ -1,0 +1,8 @@
+node_modules
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars
+terraform.tfvars.json
+.crds
+*.pem
