@@ -199,7 +199,7 @@ resource "aws_codepipeline" "terraform_pipeline" {
       category         = "Source"
       owner            = "ThirdParty"
       provider         = "GitHub"
-      version          = "2"
+      version          = "1"
       output_artifacts = ["source_output"]
       configuration = {
         Owner      = var.github_owner
@@ -217,6 +217,7 @@ resource "aws_codepipeline" "terraform_pipeline" {
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"
+      version          = "1" 
       input_artifacts  = ["source_output"]
       output_artifacts = ["build_output"]
       configuration = {
