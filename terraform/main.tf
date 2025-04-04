@@ -220,7 +220,7 @@ resource "aws_codepipeline" "terraform_pipeline" {
   stage {
     name = "Source"
     action {
-      name             = "GitHub"
+      name             = "Source"
       category         = "Source"
       owner            = "AWS"
       provider         = "CodeStarSourceConnection"
