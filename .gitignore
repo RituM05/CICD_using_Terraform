@@ -7,3 +7,5 @@ terraform.tfvars.json
 backend.tfvars
 .crds
 *.pem
+terraform-debug.log
+tfplan.out

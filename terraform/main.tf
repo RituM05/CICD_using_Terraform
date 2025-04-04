@@ -151,6 +151,18 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy_attachment" {
   policy_arn = aws_iam_policy.codepipeline_policy.arn
 }
 
+# Attach AWS-Managed Policies to CodePipeline Role
+locals {
+  managed_policies = [
+    "arn:aws:iam::aws:policy/AWSCodeStarFullAccess",
+    "arn:aws:iam::aws:policy/AWSCodePipelineFullAccess",
+    "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+    "arn:aws:iam::aws:policy/SecretsManagerReadWrite",
+    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+  ]
+}
+
 resource "aws_iam_role" "codebuild_role" {
   name = "CodeBuildRole"
 
