@@ -39,6 +39,11 @@ resource "aws_key_pair" "deployer" {
 
 # Security Group
 resource "aws_security_group" "maingroup" {
+  name        = "terraform-security-group"
+  description = "Security group for Terraform-managed instances"
+
+  vpc_id      = "vpc-045a49b950287bf72"  
+
   egress {
     cidr_blocks = ["0.0.0.0/0"]
     from_port   = 0
@@ -69,11 +74,14 @@ resource "aws_iam_instance_profile" "ec2-profile" {
 
 # EC2 Instance
 resource "aws_instance" "servernode" {
-  ami                    = "ami-0c3b809fcf2445b6a"
+  ami                    = "ami-0e35ddab05955cf57"
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.deployer.key_name
-  vpc_security_group_ids = [aws_security_group.maingroup.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2-profile.name
+  subnet_id              = "subnet-000fed4adb0958265" # <-- Public subnet
+  vpc_security_group_ids = ["sg-0e904b9d395c1511b"]
+
+  associate_public_ip_address = true
 
   connection {
     type        = "ssh"
@@ -182,6 +190,11 @@ resource "aws_iam_role_policy_attachment" "codebuild_policy_attachment" {
   policy_arn = aws_iam_policy.codebuild_policy.arn
 }
 
+resource "aws_codestarconnections_connection" "github_connection" {
+  name          = "GitHubConnection"
+  provider_type = "GitHub"
+}
+
 # GitHub Source for CodePipeline
 resource "aws_codepipeline" "terraform_pipeline" {
   name     = "Terraform-CICD-Pipeline"
@@ -197,15 +210,15 @@ resource "aws_codepipeline" "terraform_pipeline" {
     action {
       name             = "GitHub"
       category         = "Source"
-      owner            = "ThirdParty"
-      provider         = "GitHub"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
       version          = "1"
       output_artifacts = ["source_output"]
       configuration = {
-        Owner      = var.github_owner
-        Repo       = var.github_repo
-        Branch     = var.github_branch
-        OAuthToken = data.aws_secretsmanager_secret_version.github_token.secret_string
+        ConnectionArn    = aws_codestarconnections_connection.github_connection.arn
+        FullRepositoryId = "RituM05/CICD_using_Terraform"
+        BranchName       = "main"
+        DetectChanges    = "true"
       }
     }
   }
@@ -297,4 +310,8 @@ resource "aws_codebuild_project" "terraform_build" {
 output "instance_public_ip" {
   value     = aws_instance.servernode.public_ip
   sensitive = true
+}
+
+output "codebuild_role_arn" {
+  value = aws_iam_role.codebuild_role.arn
 }
