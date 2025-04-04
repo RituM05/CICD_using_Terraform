@@ -107,11 +107,6 @@ resource "aws_iam_role" "codepipeline_role" {
         Effect = "Allow"
         Principal = { Service = "codepipeline.amazonaws.com" }
         Action = "sts:AssumeRole"
-      },
-      {
-        Effect = "Allow"
-        Principal = { Service = "codebuild.amazonaws.com" }
-        Action = "sts:AssumeRole"
       }
     ]
   })
@@ -132,7 +127,8 @@ resource "aws_iam_policy" "codepipeline_policy" {
         "codebuild:*",
         "secretsmanager:GetSecretValue",
         "secretsmanager:ListSecrets",
-        "iam:PassRole"
+        "iam:PassRole",
+        "codestar-connections:UseConnection"
       ],
      "Resource": "*"
     },
@@ -155,12 +151,17 @@ resource "aws_iam_role_policy_attachment" "codepipeline_policy_attachment" {
 locals {
   managed_policies = [
     "arn:aws:iam::aws:policy/AWSCodeStarFullAccess",
-    "arn:aws:iam::aws:policy/AWSCodePipelineFullAccess",
     "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
     "arn:aws:iam::aws:policy/SecretsManagerReadWrite",
-    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess",
   ]
+}
+
+resource "aws_iam_role_policy_attachment" "managed_policies_attachment" {
+  for_each = toset(local.managed_policies)
+  role     = aws_iam_role.codepipeline_role.name
+  policy_arn = each.value
 }
 
 resource "aws_iam_role" "codebuild_role" {
