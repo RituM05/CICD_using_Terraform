@@ -1,43 +1,28 @@
 version: 0.2
 
-env:
-  variables:
-    TF_VAR_region: "ap-south-2"
-    TF_VAR_github_owner: "RituM05"
-    TF_VAR_github_repo: "CICD_using_Terraform"
-    TF_VAR_github_branch: "main"
-  secrets-manager:
-    TF_VAR_github_token: "github_token"
-    TF_VAR_terraform_state_bucket: "aws-tf-state-bucket"  # Secret stored in AWS Secrets Manager
-
 phases:
   install:
-    runtime-versions:
-      docker: 20
     commands:
-      - echo "Installing Terraform..."
-      - curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-      - sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-      - sudo apt-get update && sudo apt-get install -y terraform
-
+      - echo Installing zip...
+      - yum install -y zip
   pre_build:
     commands:
-      - echo "Fetching Terraform state bucket from Secrets Manager..."
-      - export TF_VAR_terraform_state_bucket=$(aws secretsmanager get-secret-value --secret-id aws-tf-state-bucket --query SecretString --output text)
-      - echo "Initializing Terraform..."
-      - terraform init -backend-config="bucket=$TF_VAR_terraform_state_bucket" -backend-config="region=$TF_VAR_region"
-
+      - echo Pre-build started...
+      - mkdir output
   build:
     commands:
-      - echo "Planning Terraform changes..."
-      - terraform plan -out=tfplan || { echo "Terraform plan failed"; exit 1; }
-
+      - echo Building source...
+      - zip -r ./output/app.zip ./*
   post_build:
     commands:
-      - echo "Applying Terraform changes..."
-      - terraform apply -auto-approve tfplan || { echo "Terraform apply failed"; exit 1; }
-      - echo "Build completed successfully."
+      - echo Build completed. Deploying to EC2...
+      - aws ssm send-command \
+          --document-name "AWS-RunShellScript" \
+          --targets "Key=instanceIds,Values=$EC2_INSTANCE_ID" \
+          --parameters 'commands=["mkdir -p /home/ec2-user/app && cd /home/ec2-user/app && aws s3 cp s3://'$DEPLOY_BUCKET'/app.zip . && unzip -o app.zip"]' \
+          --region $AWS_DEFAULT_REGION \
+          --comment "Deploying build from CodePipeline"
 
 artifacts:
   files:
-    - '**/*'
+    - output/app.zip
