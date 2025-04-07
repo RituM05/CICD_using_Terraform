@@ -9,33 +9,27 @@ phases:
     runtime-versions:
       nodejs: 22
     commands:
-      - echo "Installing Terraform..."
-      - sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-      - curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-      - sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-      - sudo apt-get update && sudo apt-get install -y terraform
-      - terraform version
+      - echo "Installing dependencies..."
+      - sudo apt-get update
 
   pre_build:
     commands:
-      - echo "Current directory:"
+      - echo "Preparing for build..."
       - pwd
       - ls -l
-      - echo "Fetching Terraform state bucket from Secrets Manager..."
-      - export TF_VAR_terraform_state_bucket=$(aws secretsmanager get-secret-value --secret-id aws-tf-state-bucket --query SecretString --output text)
-      - export TF_VAR_terraform_state_key="terraform/terraform.tfstate"
-      - echo "Initializing Terraform..."
-      - terraform -chdir=terraform init -backend-config="bucket=$TF_VAR_terraform_state_bucket" -backend-config="region=$TF_VAR_region" -backend-config="key=$TF_VAR_terraform_state_key"
 
   build:
     commands:
-      - echo "Planning Terraform changes..."
-      - terraform -chdir=terraform plan -out=tfplan
+      - echo "Running build phase..."
+      # Add your actual build commands here (e.g. npm install, npm run build)
+      - npm install
+      - npm run build
+
 
   post_build:
     commands:
-      - echo "Applying Terraform changes..."
-      - terraform -chdir=terraform apply -auto-approve tfplan
+      - echo "Post build steps..."
+      # Add your post-build logic here (e.g. tests, packaging, etc.)
 
 artifacts:
   files:
