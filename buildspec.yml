@@ -18,27 +18,29 @@ phases:
 
   pre_build:
     commands:
+      - echo "Current directory:"
+      - pwd
+      - echo "Listing files:"
+      - ls -l
       - echo "Fetching Terraform state bucket from Secrets Manager..."
       - export TF_VAR_terraform_state_bucket=$(aws secretsmanager get-secret-value --secret-id aws-tf-state-bucket --query SecretString --output text)
       - export TF_VAR_terraform_state_key="terraform/terraform.tfstate"
-      - echo "Changing directory to terraform/"
-      - cd terraform
+      - cd CICD_using_Terraform/terraform
       - echo "Initializing Terraform..."
       - terraform init -backend-config="bucket=$TF_VAR_terraform_state_bucket" -backend-config="region=$TF_VAR_region" -backend-config="key=$TF_VAR_terraform_state_key"
 
-
   build:
     commands:
-      - cd terraform
+      - cd CICD_using_Terraform/terraform
       - echo "Planning Terraform changes..."
       - terraform plan -out=tfplan
 
   post_build:
     commands:
-      - cd terraform
+      - cd CICD_using_Terraform/terraform
       - echo "Applying Terraform changes..."
       - terraform apply -auto-approve tfplan
 
 artifacts:
   files:
-    - appspec.yml
+    - CICD_using_Terraform/appspec.yml
