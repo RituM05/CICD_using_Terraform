@@ -198,7 +198,13 @@ resource "aws_iam_policy" "codebuild_policy" {
       {
         Effect = "Allow"
         Action = [
-          "s3:GetObject",
+          "s3:GetObject"
+        ]
+        Resource = "arn:aws:s3:::ec2-app-state-bucket1/Terraform-CICD-Pipel/source_out/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "s3:PutObject",
           "s3:DeleteObject"
         ]
