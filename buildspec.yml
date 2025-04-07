@@ -6,29 +6,24 @@ env:
 
 phases:
   install:
-    runtime-versions:
-      nodejs: 18
     commands:
       - echo "Installing Terraform..."
       - curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
       - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
       - apt update && apt install terraform -y
-      - terraform -version
 
   pre_build:
     commands:
-      - echo "Fetching S3 bucket name from Secrets Manager..."
+      - echo "Fetching bucket from Secrets Manager..."
       - BUCKET_NAME=$(aws secretsmanager get-secret-value --secret-id $TF_STATE_BUCKET_SECRET --query SecretString --output text)
-      - echo "Bucket name fetched: $BUCKET_NAME"
+      - echo "Bucket: $BUCKET_NAME"
       - cd terraform
       - terraform init -backend-config="bucket=$BUCKET_NAME" -backend-config="key=dev/terraform.tfstate" -backend-config="region=ap-south-1"
 
   build:
     commands:
-      - echo "Running Terraform plan..."
       - terraform plan -out=tfplan
 
   post_build:
     commands:
-      - echo "Applying Terraform changes..."
       - terraform apply -auto-approve tfplan
