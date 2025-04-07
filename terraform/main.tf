@@ -288,6 +288,7 @@ resource "aws_codebuild_project" "terraform_build" {
 
   source {
     type      = "CODEPIPELINE"
+    buildspec = "buildspec.yml"
   }
 }
 
