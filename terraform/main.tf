@@ -179,23 +179,39 @@ resource "aws_iam_role" "codebuild_role" {
 
 resource "aws_iam_policy" "codebuild_policy" {
   name        = "CodeBuildPolicy"
-  description = "Minimal permissions for CodeBuild"
+  description = "Permissions for CodeBuild to access Terraform backend and logs"
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "codebuild:*",
-        "s3:GetObject",
-        "s3:PutObject",
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents",
-        "secretsmanager:GetSecretValue"
-      ]
-      Resource = "*"
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "codebuild:*",
+          "secretsmanager:GetSecretValue",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = "arn:aws:s3:::ec2-app-state-bucket1/terraform/terraform.tfstate"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = "arn:aws:s3:::ec2-app-state-bucket1"
+      }
+    ]
   })
 }
 
