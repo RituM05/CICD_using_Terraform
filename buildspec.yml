@@ -10,7 +10,7 @@ phases:
       nodejs: 22
     commands:
       - echo "Installing dependencies..."
-      - sudo apt-get update
+      - npm install
 
   pre_build:
     commands:
@@ -21,17 +21,13 @@ phases:
   build:
     commands:
       - echo "Running build phase..."
-      # Add your actual build commands here (e.g. npm install, npm run build)
-      - cd /nodejsapp
-      - npm install
       - npm run build
-
 
   post_build:
     commands:
       - echo "Post build steps..."
-      # Add your post-build logic here (e.g. tests, packaging, etc.)
 
 artifacts:
+  base-directory: nodejsapp
   files:
     - appspec.yml
