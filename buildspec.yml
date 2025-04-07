@@ -18,10 +18,12 @@ phases:
 
   pre_build:
     commands:
-      - echo "Changing directory to /terraform"
+      - echo "Fetching Terraform state bucket from Secrets Manager..."
+      - export TF_VAR_terraform_state_bucket=$(aws secretsmanager get-secret-value --secret-id aws-tf-state-bucket --query SecretString --output text)
+      - echo "Changing directory to terraform/"
       - cd terraform
       - echo "Initializing Terraform..."
-      - terraform init
+      - terraform init -backend-config="bucket=$TF_VAR_terraform_state_bucket" -backend-config="region=$TF_VAR_region"
 
   build:
     commands:
