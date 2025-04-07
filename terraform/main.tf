@@ -189,8 +189,8 @@ resource "aws_iam_policy" "codebuild_policy" {
         "codebuild:*",
         "s3:GetObject",
         "s3:PutObject",
+        "logs:CreateLogGroup",
         "logs:CreateLogStream",
-        "logs:PutLogEvents",
         "logs:PutLogEvents",
         "secretsmanager:GetSecretValue"
       ]
