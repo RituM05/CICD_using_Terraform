@@ -2,7 +2,6 @@ version: 0.2
 
 env:
   secrets-manager:
-    # The secret name you stored the bucket in
     TF_STATE_BUCKET_SECRET: "aws-tf-state-bucket"
 
 phases:
@@ -22,10 +21,7 @@ phases:
       - BUCKET_NAME=$(aws secretsmanager get-secret-value --secret-id $TF_STATE_BUCKET_SECRET --query SecretString --output text)
       - echo "Bucket name fetched: $BUCKET_NAME"
       - cd terraform
-      - terraform init \
-          -backend-config="bucket=$BUCKET_NAME" \
-          -backend-config="key=dev/terraform.tfstate" \
-          -backend-config="region=ap-south-1"
+      - terraform init -backend-config="bucket=$BUCKET_NAME" -backend-config="key=dev/terraform.tfstate" -backend-config="region=ap-south-1"
 
   build:
     commands:

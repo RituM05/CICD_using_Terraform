@@ -193,6 +193,7 @@ resource "aws_iam_policy" "codebuild_policy" {
         "logs:CreateLogStream",
         "logs:PutLogEvents",
         "secretsmanager:GetSecretValue"
+        "Resource": "arn:aws:secretsmanager:ap-south-1:058264377722:secret:aws-tf-state-bucket"
       ]
       Resource = "*"
     }]
