@@ -179,7 +179,7 @@ resource "aws_iam_role" "codebuild_role" {
 
 resource "aws_iam_policy" "codebuild_policy" {
   name        = "CodeBuildPolicy"
-  description = "Permissions for CodeBuild to access Terraform backend, logs, and S3 artifacts"
+  description = "Permissions for CodeBuild to access Terraform backend, logs, EC2, S3, IAM, and CodeConnections"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -191,7 +191,8 @@ resource "aws_iam_policy" "codebuild_policy" {
           "secretsmanager:GetSecretValue",
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
+          "ec2:ImportKeyPair"
         ],
         Resource = "*"
       },
@@ -214,6 +215,47 @@ resource "aws_iam_policy" "codebuild_policy" {
           "s3:ListBucket"
         ],
         Resource = "arn:aws:s3:::ec2-app-state-bucket1"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:CreateInstanceProfile",
+          "iam:AddRoleToInstanceProfile",
+          "iam:GetInstanceProfile",
+          "iam:PassRole"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ec2:CreateSecurityGroup",
+          "ec2:DescribeSecurityGroups",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "iam:CreateRole",
+          "iam:PutRolePolicy",
+          "iam:AttachRolePolicy",
+          "iam:CreatePolicy",
+          "iam:PassRole"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "codeconnections:CreateConnection",
+          "codeconnections:GetConnection",
+          "codeconnections:DeleteConnection",
+          "codeconnections:ListConnections"
+        ],
+        Resource = "*"
       }
     ]
   })
