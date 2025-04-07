@@ -17,13 +17,11 @@ phases:
       - terraform version
 
   pre_build:
-    commands:
-      - cd terraform
-      - echo "Initializing Terraform..."
-      - terraform init \
-        -backend-config="bucket=my-terraform-state-bucket" \
-        -backend-config="key=dev/terraform.tfstate" \
-        -backend-config="region=ap-south-1"
+  commands:
+    - cd terraform
+    - echo "Initializing Terraform..."
+    - terraform init -backend-config="bucket=my-terraform-state-bucket" -backend-config="key=dev/terraform.tfstate" -backend-config="region=ap-south-1"
+
   build:
     commands:
       - cd terraform
