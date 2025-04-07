@@ -22,13 +22,13 @@ phases:
   build:
     commands:
       - echo "Running build phase..."
-      - cd nodejsapp
-      - npm run build
+      - npm run build   # assumes a "build" script exists in package.json
 
   post_build:
     commands:
       - echo "Post build steps..."
 
 artifacts:
+  base-directory: nodejsapp
   files:
     - appspec.yml
