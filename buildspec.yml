@@ -22,6 +22,7 @@ phases:
     commands:
       - echo "Running build phase..."
       # Add your actual build commands here (e.g. npm install, npm run build)
+      - cd /nodejsapp
       - npm install
       - npm run build
 
