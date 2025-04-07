@@ -265,7 +265,7 @@ resource "aws_codebuild_project" "terraform_build" {
 
   environment {
     compute_type = "BUILD_GENERAL1_SMALL"
-    image        = "aws/codebuild/standard:5.0"  # Using Ubuntu-based standard image
+    image        = "aws/codebuild/standard:6.0"
     type         = "LINUX_CONTAINER"
 
     environment_variable {
@@ -288,35 +288,6 @@ resource "aws_codebuild_project" "terraform_build" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = <<-EOT
-      version: 0.2
-      env:
-        secrets-manager:
-          TF_VAR_github_token: "github_token"
-
-      phases:
-        install:
-          runtime-versions:
-            docker: 20
-          commands:
-            - echo "Installing Terraform on Ubuntu..."
-            - sudo apt update && sudo apt install -y gnupg software-properties-common
-            - curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-            - sudo add-apt-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-            - sudo apt update && sudo apt install -y terraform
-        pre_build:
-          commands:
-            - echo "Initializing Terraform..."
-            - terraform init -backend-config="bucket=$(aws secretsmanager get-secret-value --secret-id aws-tf-state-bucket --query SecretString --output text)"
-        build:
-          commands:
-            - echo "Planning Terraform changes..."
-            - terraform plan -out=tfplan
-        post_build:
-          commands:
-            - echo "Applying Terraform changes..."
-            - terraform apply -auto-approve tfplan
-    EOT
   }
 }
 

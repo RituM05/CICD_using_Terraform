@@ -1,28 +1,31 @@
 version: 0.2
 
+env:
+  secrets-manager:
+    TF_VAR_github_token: "github_token"
+
 phases:
   install:
+    runtime-versions:
+      python: 3.x
     commands:
-      - echo Installing zip...
-      - yum install -y zip
+      - echo "Installing Terraform..."
+      - sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+      - curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+      - sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+      - sudo apt-get update && sudo apt-get install -y terraform
+
   pre_build:
     commands:
-      - echo Pre-build started...
-      - mkdir output
+      - echo "Initializing Terraform..."
+      - terraform init
+
   build:
     commands:
-      - echo Building source...
-      - zip -r ./output/app.zip ./*
+      - echo "Planning Terraform changes..."
+      - terraform plan -out=tfplan
+
   post_build:
     commands:
-      - echo Build completed. Deploying to EC2...
-      - aws ssm send-command \
-          --document-name "AWS-RunShellScript" \
-          --targets "Key=instanceIds,Values=$EC2_INSTANCE_ID" \
-          --parameters 'commands=["mkdir -p /home/ec2-user/app && cd /home/ec2-user/app && aws s3 cp s3://'$DEPLOY_BUCKET'/app.zip . && unzip -o app.zip"]' \
-          --region $AWS_DEFAULT_REGION \
-          --comment "Deploying build from CodePipeline"
-
-artifacts:
-  files:
-    - output/app.zip
+      - echo "Applying Terraform changes..."
+      - terraform apply -auto-approve tfplan
