@@ -2,38 +2,37 @@ version: 0.2
 
 env:
   secrets-manager:
-    TF_VAR_github_token: "github_token"
+    # The secret name you stored the bucket in
+    TF_STATE_BUCKET_SECRET: "aws-tf-state-bucket"
 
 phases:
   install:
     runtime-versions:
-      nodejs: 22
+      nodejs: 18
     commands:
       - echo "Installing Terraform..."
-      - sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
-      - curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-      - sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-      - sudo apt-get update && sudo apt-get install -y terraform
-      - terraform version
+      - curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+      - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+      - apt update && apt install terraform -y
+      - terraform -version
 
   pre_build:
     commands:
+      - echo "Fetching S3 bucket name from Secrets Manager..."
+      - BUCKET_NAME=$(aws secretsmanager get-secret-value --secret-id $TF_STATE_BUCKET_SECRET --query SecretString --output text)
+      - echo "Bucket name fetched: $BUCKET_NAME"
       - cd terraform
-      - echo "Initializing Terraform..."
-      - terraform init -backend-config="bucket=my-terraform-state-bucket" -backend-config="key=dev/terraform.tfstate" -backend-config="region=ap-south-1"
+      - terraform init \
+          -backend-config="bucket=$BUCKET_NAME" \
+          -backend-config="key=dev/terraform.tfstate" \
+          -backend-config="region=ap-south-1"
 
   build:
     commands:
-      - cd terraform
-      - echo "Planning Terraform changes..."
+      - echo "Running Terraform plan..."
       - terraform plan -out=tfplan
 
   post_build:
     commands:
-      - cd terraform
       - echo "Applying Terraform changes..."
       - terraform apply -auto-approve tfplan
-
-artifacts:
-  files:
-    - appspec.yml
