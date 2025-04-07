@@ -2,32 +2,45 @@ version: 0.2
 
 env:
   secrets-manager:
-    TF_STATE_BUCKET_SECRET: "aws-tf-state-bucket"
+    TF_VAR_github_token: "github_token"
 
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 22
     commands:
       - echo "Installing Terraform..."
-      - curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-      - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
-      - apt update && apt install terraform -y
+      - sudo apt-get update && sudo apt-get install -y gnupg software-properties-common
+      - curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+      - sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+      - sudo apt-get update && sudo apt-get install -y terraform
+      - terraform version
 
   pre_build:
     commands:
-      - echo "Getting bucket name from Secrets Manager..."
-      - export BUCKET_NAME=$(aws secretsmanager get-secret-value --secret-id $TF_STATE_BUCKET_SECRET --query SecretString --output text)
-      - echo "Using bucket: $BUCKET_NAME"
+      - echo "Fetching Terraform state bucket from Secrets Manager..."
+      - export TF_VAR_terraform_state_bucket=$(aws secretsmanager get-secret-value --secret-id aws-tf-state-bucket --query SecretString --output text)
+      - export TF_VAR_terraform_state_key="terraform/terraform.tfstate"
+      - echo "Changing directory to terraform/"
       - cd terraform
-      - terraform init -backend-config="bucket=$BUCKET_NAME" -backend-config="key=dev/terraform.tfstate" -backend-config="region=ap-south-1"
+      - echo "Initializing Terraform..."
+      - terraform init \
+          -backend-config="bucket=$TF_VAR_terraform_state_bucket" \
+          -backend-config="region=$TF_VAR_region" \
+          -backend-config="key=$TF_VAR_terraform_state_key"
 
   build:
     commands:
-      - echo "Running Terraform Plan..."
+      - cd terraform
+      - echo "Planning Terraform changes..."
       - terraform plan -out=tfplan
 
   post_build:
     commands:
-      - echo "Applying Terraform..."
+      - cd terraform
+      - echo "Applying Terraform changes..."
       - terraform apply -auto-approve tfplan
+
+artifacts:
+  files:
+    - appspec.yml
