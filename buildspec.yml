@@ -33,3 +33,4 @@ artifacts:
   files:
     - appspec.yml
     - nodejsapp/**/*
+    - scripts/**/*

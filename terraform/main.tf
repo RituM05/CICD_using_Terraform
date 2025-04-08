@@ -83,6 +83,20 @@ resource "aws_instance" "servernode" {
 
   associate_public_ip_address = true
 
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo apt update -y
+              sudo apt install -y ruby wget
+
+              cd /home/ubuntu
+              wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
+              chmod +x ./install
+              sudo ./install auto
+
+              sudo systemctl start codedeploy-agent
+              sudo systemctl enable codedeploy-agent
+              EOF
+
   connection {
     type        = "ssh"
     host        = self.public_ip
@@ -125,6 +139,7 @@ resource "aws_iam_policy" "codepipeline_policy" {
       "Action": [
         "codepipeline:*",
         "codebuild:*",
+        "codedeploy:*",
         "secretsmanager:GetSecretValue",
         "secretsmanager:ListSecrets",
         "iam:PassRole",
@@ -266,6 +281,26 @@ resource "aws_iam_role_policy_attachment" "codebuild_policy_attachment" {
   policy_arn = aws_iam_policy.codebuild_policy.arn
 }
 
+resource "aws_iam_role" "codedeploy_service_role" {
+  name = "CodeDeployServiceRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Service = "codedeploy.amazonaws.com"
+      },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "codedeploy_service_policy" {
+  role       = aws_iam_role.codedeploy_service_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+}
+
 resource "aws_codestarconnections_connection" "github_connection" {
   name          = "GitHubConnection"
   provider_type = "GitHub"
@@ -314,6 +349,22 @@ resource "aws_codepipeline" "terraform_pipeline" {
       }
     }
   }
+
+  stage {
+    name = "Deploy"
+    action {
+      name            = "CodeDeploy"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "CodeDeploy"
+      input_artifacts = ["build_output"]
+      version         = "1"
+      configuration = {
+        ApplicationName     = aws_codedeploy_app.nodejs_app.name
+        DeploymentGroupName = aws_codedeploy_deployment_group.nodejs_group.deployment_group_name
+      }
+    }
+  }
 }
 
 # AWS CodeBuild Project to Run Terraform
@@ -351,6 +402,35 @@ resource "aws_codebuild_project" "terraform_build" {
   source {
     type      = "CODEPIPELINE"
     buildspec = "buildspec.yml"
+  }
+}
+
+resource "aws_codedeploy_app" "nodejs_app" {
+  name             = "NodeJSApp"
+  compute_platform = "Server"
+}
+
+resource "aws_codedeploy_deployment_group" "nodejs_group" {
+  app_name              = aws_codedeploy_app.nodejs_app.name
+  deployment_group_name = "NodeJSDeploymentGroup"
+  service_role_arn      = aws_iam_role.codedeploy_service_role.arn
+
+  deployment_style {
+    deployment_type   = "IN_PLACE"
+    deployment_option = "WITHOUT_TRAFFIC_CONTROL"
+  }
+
+  ec2_tag_set {
+    ec2_tag_filter {
+      key   = "Name"
+      value = "DeployVM"
+      type  = "KEY_AND_VALUE"
+    }
+  }
+
+  auto_rollback_configuration {
+    enabled = true
+    events  = ["DEPLOYMENT_FAILURE"]
   }
 }
 
