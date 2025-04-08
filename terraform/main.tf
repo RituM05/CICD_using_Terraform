@@ -79,23 +79,26 @@ resource "aws_instance" "servernode" {
   key_name               = aws_key_pair.deployer.key_name
   iam_instance_profile   = aws_iam_instance_profile.ec2-profile.name
   subnet_id              = "subnet-000fed4adb0958265" # <-- Public subnet
-  vpc_security_group_ids = ["sg-0e904b9d395c1511b"]
+  vpc_security_group_ids = [aws_security_group.maingroup.id]
 
   associate_public_ip_address = true
 
   user_data = <<-EOF
               #!/bin/bash
+              exec > /var/log/user-data.log 2>&1
+              set -x
+
               sudo apt update -y
               sudo apt install -y ruby wget
 
               cd /home/ubuntu
-              wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install
+              wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install -O install
               chmod +x ./install
               sudo ./install auto
 
               sudo systemctl start codedeploy-agent
               sudo systemctl enable codedeploy-agent
-              EOF
+EOF
 
   connection {
     type        = "ssh"
@@ -108,6 +111,15 @@ resource "aws_instance" "servernode" {
   tags = {
     "Name" = "DeployVM"
   }
+}
+
+resource "aws_eip" "static_ip" {
+  vpc = true
+}
+
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = aws_instance.servernode.id
+  allocation_id = aws_eip.static_ip.id
 }
 
 # IAM Role for CodePipeline
@@ -438,6 +450,10 @@ resource "aws_codedeploy_deployment_group" "nodejs_group" {
 output "instance_public_ip" {
   value     = aws_instance.servernode.public_ip
   sensitive = true
+}
+
+output "instance_static_ip" {
+  value = aws_eip.static_ip.public_ip
 }
 
 output "codebuild_role_arn" {
