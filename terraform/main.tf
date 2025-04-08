@@ -89,7 +89,7 @@ resource "aws_instance" "servernode" {
               sudo apt install -y ruby wget
 
               cd /home/ubuntu
-              wget https://aws-codedeploy-us-east-1.s3.us-east-1.amazonaws.com/latest/install
+              wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install
               chmod +x ./install
               sudo ./install auto
 
