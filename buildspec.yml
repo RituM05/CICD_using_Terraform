@@ -29,6 +29,7 @@ phases:
       - echo "Post build steps..."
 
 artifacts:
-  base-directory: nodejsapp
+  base-directory: .
   files:
     - appspec.yml
+    - nodejsapp/**/*
