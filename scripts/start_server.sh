@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Navigate to app directory
-cd /home/ec2-user/myapp/nodejsapp
+cd /home/ubuntu/myapp
 
 # Kill any process running on port 8080
 PORT=8080

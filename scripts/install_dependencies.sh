@@ -1,7 +1,12 @@
 #!/bin/bash
+echo "Running InstallDependencies Script"
 
-# Navigate to app directory
-cd /home/ec2-user/myapp/nodejsapp
+# Update packages
+sudo apt-get update -y
 
-# Install Node.js dependencies
+# Example dependencies for Node.js app
+sudo apt-get install -y nodejs npm
+
+# Navigate to app directory and install dependencies
+cd /home/ubuntu/myapp
 npm install
