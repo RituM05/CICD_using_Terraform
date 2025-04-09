@@ -3,10 +3,11 @@ echo "Running InstallDependencies Script"
 
 # Update packages
 sudo apt-get update -y
-
-# Example dependencies for Node.js app
 sudo apt-get install -y nodejs npm
 
-# Navigate to app directory and install dependencies
+# Fix permissions
+sudo chown -R ubuntu:ubuntu /home/ubuntu/myapp
+
+# Navigate and install
 cd /home/ubuntu/myapp
 npm install
