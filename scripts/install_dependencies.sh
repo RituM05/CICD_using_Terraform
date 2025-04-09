@@ -1,13 +1,12 @@
 #!/bin/bash
 echo "Running InstallDependencies Script"
 
-# Update packages
-sudo apt-get update -y
-sudo apt-get install -y nodejs npm
-
-# Fix permissions
+# Give ownership to ubuntu user
 sudo chown -R ubuntu:ubuntu /home/ubuntu/myapp
 
-# Navigate and install
-cd /home/ubuntu/myapp
+# Optional: cleanup (ensure permission first)
+rm -rf /home/ubuntu/myapp/nodejsapp/node_modules
+
+# Install dependencies
+cd /home/ubuntu/myapp/nodejsapp
 npm install
