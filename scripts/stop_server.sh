@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Running StopServer Script"
+echo "Stopping any running Node.js app..."
 
-# Stop the app
-pkill -f myapp || true
+# Stop the app (if running)
+pkill node || true
