@@ -1,10 +1,9 @@
 #!/bin/bash
-echo "Starting the Node.js app..."
-
+echo "Starting server..."
 cd /home/ubuntu/myapp/nodejsapp
 
-# Kill existing Node.js processes if any
-pkill node || true
+# Ensure node_modules is present
+npm install
 
-# Start the app in the background
-nohup node app.js > /home/ubuntu/app.log 2>&1 &
+# Start the app in background
+nohup npm start > app.log 2>&1 &
