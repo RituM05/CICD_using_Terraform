@@ -1,8 +1,11 @@
 #!/bin/bash
-echo "Running BeforeInstall Script"
+echo "Running before_install.sh..."
 
-# Optional: Stop the app if it's already running
-pkill -f myapp || true
+# Ensure the ubuntu user has ownership of the entire app directory
+sudo chown -R ubuntu:ubuntu /home/ubuntu/myapp
 
-# Clean old app directory
-rm -rf /home/ubuntu/myapp
+# Now safely remove previous deployment if needed
+rm -rf /home/ubuntu/myapp/nodejsapp/node_modules
+rm -f /home/ubuntu/myapp/nodejsapp/package-lock.json
+
+echo "before_install.sh completed"
