@@ -72,6 +72,16 @@ resource "aws_iam_instance_profile" "ec2-profile" {
   role = "EC2-ECR-AUTH"
 }
 
+resource "aws_iam_role_policy_attachment" "codedeploy_policy" {
+  role       = "EC2-ECR-AUTH"
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"
+}
+
+resource "aws_iam_role_policy_attachment" "cloudwatch_logs" {
+  role       = "EC2-ECR-AUTH"
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
 # EC2 Instance
 resource "aws_instance" "servernode" {
   ami                    = "ami-0e35ddab05955cf57"
@@ -83,22 +93,7 @@ resource "aws_instance" "servernode" {
 
   associate_public_ip_address = true
 
-  user_data = <<-EOF
-              #!/bin/bash
-              exec > /var/log/user-data.log 2>&1
-              set -x
-
-              sudo apt update -y
-              sudo apt install -y ruby wget
-
-              cd /home/ubuntu
-              wget https://aws-codedeploy-ap-south-1.s3.ap-south-1.amazonaws.com/latest/install -O install
-              chmod +x ./install
-              sudo ./install auto
-
-              sudo systemctl start codedeploy-agent
-              sudo systemctl enable codedeploy-agent
-EOF
+  user_data = file("${path.module}/../scripts/install_codedeploy.sh")
 
   connection {
     type        = "ssh"
@@ -111,15 +106,6 @@ EOF
   tags = {
     "Name" = "DeployVM"
   }
-}
-
-resource "aws_eip" "static_ip" {
-  vpc = true
-}
-
-resource "aws_eip_association" "eip_assoc" {
-  instance_id   = aws_instance.servernode.id
-  allocation_id = aws_eip.static_ip.id
 }
 
 # IAM Role for CodePipeline
@@ -450,10 +436,6 @@ resource "aws_codedeploy_deployment_group" "nodejs_group" {
 output "instance_public_ip" {
   value     = aws_instance.servernode.public_ip
   sensitive = true
-}
-
-output "instance_static_ip" {
-  value = aws_eip.static_ip.public_ip
 }
 
 output "codebuild_role_arn" {
