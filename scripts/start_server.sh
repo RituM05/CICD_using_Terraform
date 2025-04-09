@@ -1,14 +1,9 @@
 #!/bin/bash
+echo "Starting server..."
+cd /home/ubuntu/myapp/nodejsapp
 
-# Navigate to app directory
-cd /home/ubuntu/myapp
+# Ensure node_modules is present
+npm install
 
-# Kill any process running on port 8080
-PORT=8080
-PID=$(lsof -t -i:$PORT)
-if [ ! -z "$PID" ]; then
-  kill -9 $PID
-fi
-
-# Start app in background
-nohup node app.js > app.log 2>&1 &
+# Start the app in background
+nohup npm start > app.log 2>&1 &
