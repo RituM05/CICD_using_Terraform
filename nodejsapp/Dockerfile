@@ -1,5 +1,5 @@
 # Use the latest LTS version of Node.js on Alpine Linux
-FROM node:lts-alpine
+FROM public.ecr.aws/docker/library/node:lts-alpine
 
 # Set environment variable for production
 ENV NODE_ENV=production
