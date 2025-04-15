@@ -297,6 +297,14 @@ resource "aws_iam_policy" "codebuild_policy" {
         "ecr:CompleteLayerUpload" 
       ],
       "Resource": "*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "ssm:GetParameters",
+          "ssm:GetParameter"
+        ],
+        Resource = "arn:aws:ssm:ap-south-1:058264377722:parameter/myapp/dev/ecr-url"
       }
     ]
   })
