@@ -19,8 +19,8 @@ phases:
       - aws --version
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
       - echo "Setting repository URI and image tag..."
-      - export REPOSITORY_URI="$ECR_REPO/nodejs-app"
-      - export IMAGE_TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)"
+      - 'export REPOSITORY_URI="$ECR_REPO/nodejs-app"'
+      - 'export IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)'
       - echo "Repository URI: $REPOSITORY_URI"
       - echo "Image Tag: $IMAGE_TAG"
 
