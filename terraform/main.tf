@@ -427,6 +427,12 @@ resource "aws_codebuild_project" "terraform_build" {
       name  = "REPOSITORY_URI"
       value = aws_ecr_repository.node_app_repo.repository_url
     }
+    # ✅ Securely load ECR URL from SSM Parameter Store
+    environment_variable {
+      name  = "ECR_REPO"
+      type  = "PARAMETER_STORE"
+      value = "/myapp/dev/ecr-url"
+    }
   }
 
   source {
