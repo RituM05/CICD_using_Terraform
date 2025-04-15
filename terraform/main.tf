@@ -60,8 +60,8 @@ resource "aws_security_group" "maingroup" {
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
-    from_port   = 80
-    to_port     = 80
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
   }
 }
@@ -80,6 +80,11 @@ resource "aws_iam_role_policy_attachment" "codedeploy_policy" {
 resource "aws_iam_role_policy_attachment" "cloudwatch_logs" {
   role       = "EC2-ECR-AUTH"
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "ec2_ecr_access" {
+  role       = "EC2-ECR-AUTH"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 # EC2 Instance
@@ -149,6 +154,15 @@ resource "aws_iam_policy" "codepipeline_policy" {
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject"],
       "Resource": "arn:aws:s3:::${var.terraform_state_bucket}/*"
+    },
+    {
+    "Effect": "Allow",
+    "Action": [
+      "ecr:DescribeImages",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchGetImage"
+    ],
+    "Resource": "*"
     }
     ]
   })
@@ -269,6 +283,20 @@ resource "aws_iam_policy" "codebuild_policy" {
           "codeconnections:ListConnections"
         ],
         Resource = "*"
+      },
+      {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage",
+        "ecr:PutImage",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload" 
+      ],
+      "Resource": "*"
       }
     ]
   })
@@ -395,6 +423,10 @@ resource "aws_codebuild_project" "terraform_build" {
       name  = "TF_VAR_github_branch"
       value = var.github_branch
     }
+    environment_variable {
+      name  = "REPOSITORY_URI"
+      value = aws_ecr_repository.node_app_repo.repository_url
+    }
   }
 
   source {
@@ -432,6 +464,82 @@ resource "aws_codedeploy_deployment_group" "nodejs_group" {
   }
 }
 
+resource "aws_ecr_repository" "node_app_repo" {
+  name                 = "nodejs-app-repo"
+  image_tag_mutability = "MUTABLE"
+  force_delete         = true
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name = "NodeJS App ECR"
+  }
+}
+
+resource "aws_ecs_cluster" "node_cluster" {
+  name = "nodejs-cluster"
+}
+
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name = "ecsTaskExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_execution_attach" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_ecs_task_definition" "node_task" {
+  family                   = "nodejs-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+
+  container_definitions = jsonencode([{
+    name      = "nodejs-app"
+    image     = "${aws_ecr_repository.node_app_repo.repository_url}:latest"
+    essential = true
+    portMappings = [{
+      containerPort = 8080
+      hostPort      = 8080
+    }]
+  }])
+}
+
+resource "aws_ecs_service" "node_service" {
+  name            = "nodejs-ecs-service"
+  cluster         = aws_ecs_cluster.node_cluster.id
+  task_definition = aws_ecs_task_definition.node_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = ["subnet-000fed4adb0958265"] # Use your subnet
+    security_groups  = [aws_security_group.maingroup.id]
+    assign_public_ip = true
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.ecs_task_execution_attach]
+}
+
 # Output EC2 Public IP
 output "instance_public_ip" {
   value     = aws_instance.servernode.public_ip
@@ -440,4 +548,12 @@ output "instance_public_ip" {
 
 output "codebuild_role_arn" {
   value = aws_iam_role.codebuild_role.arn
+}
+
+output "ecr_repo_url" {
+  value = aws_ecr_repository.node_app_repo.repository_url
+}
+
+output "ecs_cluster_name" {
+  value = aws_ecs_cluster.node_cluster.name
 }
