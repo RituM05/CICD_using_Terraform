@@ -10,7 +10,6 @@ phases:
       nodejs: 22
     commands:
       - echo "Installing dependencies..."
-      - cd nodejsapp
       - npm install
 
   pre_build:
