@@ -296,7 +296,7 @@ resource "aws_iam_policy" "codebuild_policy" {
         "ecr:UploadLayerPart",
         "ecr:CompleteLayerUpload" 
       ],
-      "Resource": "arn:aws:ecr:ap-south-1:058264377722:repository/nodejs-app-repo"
+      "Resource": "*"
       },
       {
         Effect = "Allow",
