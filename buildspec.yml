@@ -15,7 +15,7 @@ phases:
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
-      - export REPOSITORY_URI="$ECR_REPO"
+      - export REPOSITORY_URI=$ECR_REPO
       - export IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - echo "Repository URI: $REPOSITORY_URI"
       - echo "Image Tag: $IMAGE_TAG"
