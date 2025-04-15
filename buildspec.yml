@@ -12,15 +12,15 @@ phases:
       - echo "Installing dependencies..."
       - cd nodejsapp
       - npm install
-      - cd ..
 
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws --version
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
-      - "REPOSITORY_URI=$ECR_REPO/nodejs-app"
-      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - echo "Setting repository URI and image tag..."
+      - export REPOSITORY_URI="$ECR_REPO/nodejs-app"
+      - export IMAGE_TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)"
       - echo "Repository URI: $REPOSITORY_URI"
       - echo "Image Tag: $IMAGE_TAG"
 
