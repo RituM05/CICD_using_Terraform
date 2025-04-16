@@ -163,6 +163,16 @@ resource "aws_iam_policy" "codepipeline_policy" {
       "ecr:BatchGetImage"
     ],
     "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeServices",
+        "ecs:UpdateService",
+        "ecs:RegisterTaskDefinition",
+        "iam:PassRole"
+      ],
+      "Resource": "*"
     }
     ]
   })
