@@ -145,7 +145,6 @@ resource "aws_iam_policy" "codepipeline_policy" {
         "codedeploy:*",
         "secretsmanager:GetSecretValue",
         "secretsmanager:ListSecrets",
-        "iam:PassRole",
         "codestar-connections:UseConnection"
       ],
      "Resource": "*"
@@ -169,10 +168,14 @@ resource "aws_iam_policy" "codepipeline_policy" {
       "Action": [
         "ecs:DescribeServices",
         "ecs:UpdateService",
-        "ecs:RegisterTaskDefinition",
-        "iam:PassRole"
+        "ecs:RegisterTaskDefinition"
       ],
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::058264377722:role/ecsTaskExecutionRole"
     }
     ]
   })
