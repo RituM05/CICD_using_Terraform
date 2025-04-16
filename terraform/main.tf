@@ -384,18 +384,37 @@ resource "aws_codepipeline" "terraform_pipeline" {
     }
   }
 
+  #### In case of EC2 deployment
+  # stage {
+  #   name = "Deploy"
+  #   action {
+  #     name            = "CodeDeploy"
+  #     category        = "Deploy"
+  #     owner           = "AWS"
+  #     provider        = "CodeDeploy"
+  #     input_artifacts = ["build_output"]
+  #     version         = "1"
+  #     configuration = {
+  #       ApplicationName     = aws_codedeploy_app.nodejs_app.name
+  #       DeploymentGroupName = aws_codedeploy_deployment_group.nodejs_group.deployment_group_name
+  #     }
+  #   }
+  # }
+
   stage {
     name = "Deploy"
     action {
-      name            = "CodeDeploy"
+      name            = "DeployToECS"
       category        = "Deploy"
       owner           = "AWS"
-      provider        = "CodeDeploy"
+      provider        = "ECS"
       input_artifacts = ["build_output"]
       version         = "1"
+
       configuration = {
-        ApplicationName     = aws_codedeploy_app.nodejs_app.name
-        DeploymentGroupName = aws_codedeploy_deployment_group.nodejs_group.deployment_group_name
+        ClusterName = aws_ecs_cluster.node_cluster.name
+        ServiceName = aws_ecs_service.node_service.name
+        FileName    = "imagedefinitions.json" # output from CodeBuild
       }
     }
   }
@@ -454,29 +473,30 @@ resource "aws_codedeploy_app" "nodejs_app" {
   compute_platform = "Server"
 }
 
-resource "aws_codedeploy_deployment_group" "nodejs_group" {
-  app_name              = aws_codedeploy_app.nodejs_app.name
-  deployment_group_name = "NodeJSDeploymentGroup"
-  service_role_arn      = aws_iam_role.codedeploy_service_role.arn
+#### In case of EC2 deployment
+# resource "aws_codedeploy_deployment_group" "nodejs_group" {
+#   app_name              = aws_codedeploy_app.nodejs_app.name
+#   deployment_group_name = "NodeJSDeploymentGroup"
+#   service_role_arn      = aws_iam_role.codedeploy_service_role.arn
 
-  deployment_style {
-    deployment_type   = "IN_PLACE"
-    deployment_option = "WITHOUT_TRAFFIC_CONTROL"
-  }
+#   deployment_style {
+#     deployment_type   = "IN_PLACE"
+#     deployment_option = "WITHOUT_TRAFFIC_CONTROL"
+#   }
 
-  ec2_tag_set {
-    ec2_tag_filter {
-      key   = "Name"
-      value = "DeployVM"
-      type  = "KEY_AND_VALUE"
-    }
-  }
+#   ec2_tag_set {
+#     ec2_tag_filter {
+#       key   = "Name"
+#       value = "DeployVM"
+#       type  = "KEY_AND_VALUE"
+#     }
+#   }
 
-  auto_rollback_configuration {
-    enabled = true
-    events  = ["DEPLOYMENT_FAILURE"]
-  }
-}
+#   auto_rollback_configuration {
+#     enabled = true
+#     events  = ["DEPLOYMENT_FAILURE"]
+#   }
+# }
 
 resource "aws_ecr_repository" "node_app_repo" {
   name                 = "nodejs-app-repo"
