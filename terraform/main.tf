@@ -167,8 +167,12 @@ resource "aws_iam_policy" "codepipeline_policy" {
       "Effect": "Allow",
       "Action": [
         "ecs:DescribeServices",
+        "ecs:DescribeTaskDefinition",
+        "ecs:DescribeTasks",
+        "ecs:ListTasks",
         "ecs:UpdateService",
-        "ecs:RegisterTaskDefinition"
+        "ecs:RegisterTaskDefinition",
+        "iam:PassRole"
       ],
       "Resource": "*"
     },
