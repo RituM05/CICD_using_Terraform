@@ -299,6 +299,17 @@ resource "aws_iam_policy" "codebuild_policy" {
       "Resource": "*"
       },
       {
+        "Effect": "Allow",
+        "Action": [
+          "ecs:DescribeClusters",
+          "ecs:DescribeServices",
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition",
+          "ecs:UpdateService"
+        ],
+        "Resource": "*"
+      },
+      {
         Effect = "Allow",
         Action = [
           "ssm:GetParameters",
